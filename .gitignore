@@ -1,0 +1,5 @@
+#ignore data files
+hn-data-a2.json
+S10_data.json
+sn_onehot.ipynb
+braid_dev.ipynb
