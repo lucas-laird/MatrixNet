@@ -28,6 +28,10 @@ class MatrixNet(nn.Module):
             self.matrix_block_layers.append(nn.Linear(self.input_size, hidden_rep_size, bias = False))
             self.matrix_block_layers.append(nn.Linear(hidden_rep_size, self.total_mat_size, bias = False))
             self.matrix_block_layers.append(nn.Tanh())
+        elif matrix_block_type == 'silu':
+            self.matrix_block_layers.append(nn.Linear(self.input_size, hidden_rep_size, bias = False))
+            self.matrix_block_layers.append(nn.Linear(hidden_rep_size, self.total_mat_size, bias = False))
+            self.matrix_block_layers.append(nn.SiLU())
         elif matrix_block_type == '1-layer': 
             self.matrix_block_layers.append(nn.Linear(self.input_size, self.total_mat_size, bias = False))
 
@@ -57,6 +61,19 @@ class MatrixNet(nn.Module):
             braid = x[:,i,:]
             temp = self.matrix_block(braid)
             mat_rep = torch.matmul(mat_rep, temp)
+        flattened_rep = torch.reshape(mat_rep, (-1, self.total_mat_size))
+        output = self.nonlin(self.l1_class(flattened_rep))
+        output = self.nonlin(self.l2_class(output))
+        output = self.out(output)
+        return output
+    
+    def mat_multiply(self, matrices, num_mats = 0):
+        #num_mats = matrices.size(1)
+        mat_rep = matrices[:,0,:]
+        if num_mats > 0:
+            for i in range(1,num_mats):
+                m = matrices[:,i,:]
+                mat_rep = torch.matmul(mat_rep, m)
         flattened_rep = torch.reshape(mat_rep, (-1, self.total_mat_size))
         output = self.nonlin(self.l1_class(flattened_rep))
         output = self.nonlin(self.l2_class(output))
